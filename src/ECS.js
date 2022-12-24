@@ -342,9 +342,7 @@ function ECS() {
 
 		// create new component state object for this entity
 		var newState
-		console.log(def)
 		if (def.stateConstructor) {
-			console.log("stateConstructor route")
 			newState = new def.stateConstructor()
 			if (!newState.hasOwnProperty('__id')) {
 				throw new Error(`Component ${def.name} stateConstructor type does not have property __id`)
