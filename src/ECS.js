@@ -176,6 +176,7 @@ function ECS() {
 		internalDef.name = name
 		internalDef.multi = !!compDefn.multi
 		internalDef.order = isNaN(compDefn.order) ? 99 : compDefn.order
+		internalDef.stateConstructor = compDefn.stateConstructor || null
 		internalDef.state = compDefn.state || {}
 		internalDef.onAdd = compDefn.onAdd || null
 		internalDef.onRemove = compDefn.onRemove || null
@@ -340,9 +341,19 @@ function ECS() {
 		}
 
 		// create new component state object for this entity
-		var newState = Object.assign({}, { __id: entID }, def.state, state)
+		var newState
+		console.log(def)
+		if (def.stateConstructor) {
+			console.log("stateConstructor route")
+			newState = new def.stateConstructor()
+			if (!newState.hasOwnProperty('__id')) {
+				throw new Error(`Component ${def.name} stateConstructor type does not have property __id`)
+			}
+		}
+		else {
+			newState = Object.assign({}, { __id: entID }, def.state, state)
+		}
 
-		// just in case passed-in state object had an __id property
 		newState.__id = entID
 
 		// add to data store - for multi components, may already be present
