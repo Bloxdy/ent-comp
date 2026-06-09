@@ -347,6 +347,8 @@ function ECS() {
 			if (!newState.hasOwnProperty('__id')) {
 				throw new Error(`Component ${def.name} stateConstructor type does not have property __id`)
 			}
+			// Apply default state and per-add overrides onto the constructed instance
+			Object.assign(newState, def.state, state)
 		}
 		else {
 			newState = Object.assign({}, { __id: entID }, def.state, state)

@@ -19,6 +19,8 @@ module.exports = class DataStore {
         this.list = []
         this.hash = {}
         this._map = {}
+        // Parallel array to `list`: _idList[i] is the id of list[i], enabling O(1) id lookup during removal
+        this._idList = []
         this._pendingRemovals = []
     }
 
@@ -30,10 +32,12 @@ module.exports = class DataStore {
             var index = this._map[id]
             this.hash[id] = stateObject
             this.list[index] = stateObject
+            this._idList[index] = id
         } else {
             this._map[id] = this.list.length
             this.hash[id] = stateObject
             this.list.push(stateObject)
+            this._idList.push(id)
         }
     }
 
@@ -52,6 +56,7 @@ module.exports = class DataStore {
         this.list = null
         this.hash = null
         this._map = null
+        this._idList = null
         this._pendingRemovals.length = 0
     }
 
@@ -87,24 +92,16 @@ function removeElement(data, id) {
     // now splice - either by popping or by swapping with final element
     if (index === data.list.length - 1) {
         data.list.pop()
+        data._idList.pop()
     } else {
         // swap last item with the one we're removing
         var swapped = data.list.pop()
         data.list[index] = swapped
-        // need to fix _map for swapped item
-        if (swapped === null || swapped[0] === null) {
-            // slowest but rarest case - swapped item is ALSO pending removal
-            var prevIndex = data.list.length
-            for (var swapID in data._map) {
-                if (data._map[swapID] === prevIndex) {
-                    data._map[swapID] = index
-                    return
-                }
-            }
-        } else {
-            var swappedID = swapped.__id || swapped[0].__id
-            data._map[swappedID] = index
-        }
+        // fix up _map for the swapped item, reading its id from _idList in O(1)
+        // rather than scanning _map in O(n)
+        var swappedID = data._idList.pop()
+        data._idList[index] = swappedID
+        data._map[swappedID] = index
     }
 }
 
